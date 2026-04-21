@@ -2,46 +2,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 try:
-    # Intentamos leer con coma, si falla intentamos con punto y coma
-    try:
-        df = pd.read_csv('repuestos.csv', sep=',', low_memory=False)
-        if 'Clase de movimiento' not in df.columns:
-            raise ValueError
-    except:
-        df = pd.read_csv('repuestos.csv', sep=';', low_memory=False)
+    # Intentamos leer el archivo detectando automáticamente si usa coma o punto y coma
+    df = pd.read_csv('repuestos.csv', sep=None, engine='python', encoding='latin-1')
+    
+    # Limpiamos los nombres de las columnas por si tienen espacios invisibles
+    df.columns = df.columns.str.strip()
+    
+    columna = 'Clase de movimiento'
+    
+    if columna not in df.columns:
+        print(f"Error: No encuentro la columna '{columna}'")
+        print(f"Columnas detectadas: {df.columns.tolist()}")
+    else:
+        # Convertimos a números y contamos
+        df[columna] = pd.to_numeric(df[columna], errors='coerce')
+        codigos = {301: 'Obsoletos', 109: 'Sin Mov (2 años)', 206: 'Mov Minimo'}
+        
+        counts = df[columna].value_counts()
+        labels = list(codigos.values())
+        values = [int(counts.get(k, 0)) for k in codigos.keys()]
 
-    # Nombre exacto de tu columna según la foto
-    columna_objetivo = 'Clase de movimiento'
-    
-    # Definir los códigos (301, 109, 206)
-    codigos_interes = {
-        301: 'Obsoletos (301)', 
-        109: 'Sin Mov. (109)', 
-        206: 'Mov. Mín. (206)'
-    }
-    
-    # Limpieza de datos
-    df[columna_objetivo] = pd.to_numeric(df[columna_objetivo], errors='coerce')
-    conteos = df[columna_objetivo].value_counts()
-    
-    etiquetas = list(codigos_interes.values())
-    cantidades = [int(conteos.get(c, 0)) for c in codigos_interes.keys()]
-
-    # Crear la gráfica
-    plt.figure(figsize=(10, 6))
-    colores = ['#e74c3c', '#f1c40f', '#3498db']
-    barras = plt.bar(etiquetas, cantidades, color=colores, edgecolor='black')
-    
-    for barra in barras:
-        yval = barra.get_height()
-        plt.text(barra.get_x() + barra.get_width()/2, yval + 0.1, yval, ha='center', va='bottom', fontweight='bold')
-
-    plt.title('Reporte de Repuestos Actualizado', fontsize=14)
-    plt.grid(axis='y', linestyle='--', alpha=0.6)
-    
-    # Guardar
-    plt.savefig('grafica_actualizada.png', bbox_inches='tight')
-    print("¡Gráfica generada con éxito!")
+        # Creamos la gráfica
+        plt.figure(figsize=(10, 6))
+        plt.bar(labels, values, color=['#ff4d4d', '#ffa64d', '#4dabff'])
+        plt.title('Reporte de Repuestos')
+        plt.ylabel('Cantidad')
+        
+        # Guardamos la imagen
+        plt.savefig('grafica_actualizada.png')
+        print("¡Gráfica creada con éxito!")
 
 except Exception as e:
-    print(f"Error detectado: {e}")
+    print(f"Error: {e}")
