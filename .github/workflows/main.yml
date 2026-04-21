@@ -1,0 +1,31 @@
+name: Actualizar Grafica Automatica
+on:
+  push:
+    paths:
+      - 'repuestos.csv' # Se activa cuando subes este archivo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar dependencias
+        run: pip install pandas matplotlib
+
+      - name: Ejecutar script de graficacion
+        run: python graficador.py
+
+      - name: Guardar imagen generada
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add grafica_actualizada.png
+          git commit -m "Gráfica actualizada automáticamente" || exit 0
+          git push
